@@ -19,15 +19,15 @@ ap.add_argument("-p", "--preprocess", type=str, default="thresh",
                 help="type of preprocessing to be done")
 args = vars(ap.parse_args())
 
-question_x = 120
-question_y = 200
-question_width = 250
+question_x = 90
+question_y = 150
+question_width = 350
 question_length = 150
 
 answers_x = question_x
 answers_y = question_y + question_length
-answers_width = question_width
-answers_length = 200
+answers_width = 280
+answers_length = 180
 
 stop_words = ["which ", "what ", "who ","has ", "have ", "had ",
 				"is ", "are ", "was ", "were ",
@@ -77,7 +77,7 @@ def extractQuestion(lines):
 	is_question_done = False
 	for line in lines:
 		line = line.strip().lower()
-		if len(line) > 3:
+		if len(line) > 6:
 			question += " " + line
 			if line.find('?') != -1:
 				is_question_done = True

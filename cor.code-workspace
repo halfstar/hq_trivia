@@ -5,6 +5,6 @@
 		}
 	],
 	"settings": {
-		"python.pythonPath": "${workspaceFolder}/env/bin/python"
+		"python.pythonPath": "${workspaceFolder}/hq_trivia/env/bin/python"
 	}
 }

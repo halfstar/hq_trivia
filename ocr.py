@@ -9,6 +9,7 @@ import json
 import time
 import subprocess
 from selenium import webdriver
+import readline
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -50,6 +51,14 @@ def ocr(image_file):
 	return lines
 
 
+def rlinput(prompt, prefill=''):
+   readline.set_startup_hook(lambda: readline.insert_text(prefill))
+   try:
+      return input(prompt)
+   finally:
+      readline.set_startup_hook()
+
+
 # step 2: extract & clean question and answers
 def extractNclean(lines):
 	question = ""
@@ -72,16 +81,15 @@ def extractNclean(lines):
 				"of ", "a ", "an ", "?"]
 	for word in stop_words:
 		question = question.replace(word, "")
-	print("question = {}".format(question))
+	confirmed = rlinput("Confirm the question :", question)
+	print("question = {}".format(confirmed))
 
 	for i, ans in enumerate(answers):
 		print("ans{} = {}".format(i, ans))
 	print("\n")
-	return question, answers
+	return confirmed, answers
 
-print("step 3: search google")
 # step 3: using custom search api question + answer
-
 def searchNcount(question, answers):
 	for i, ans in enumerate(answers):
 		url = "https://www.googleapis.com/customsearch/v1"
@@ -119,10 +127,14 @@ def solveQuestion(image_name):
 def winHqTrivia():
 	now = "y"
 	count = 0
-	while now == "y" :
+
+	while True:
 		now = input("take snap shot now?")
-		image_name = "{}_{}.png".format(args["image"], str(++count))
+		if now == "n":
+			break
+		image_name = "{}_{}.png".format(args["image"], str(count))
+		count+=1
 		solveQuestion(image_name)
-		print("\n next question\n")
+		print("next question\n")
 
 winHqTrivia()

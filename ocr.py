@@ -34,6 +34,11 @@ stop_words = ["which ", "what ", "who ","has ", "have ", "had ",
 				"these ", "those ", "this ", "that ", "the ",
 				"of ", "a ", "an ", "?"]
 
+exclude_words = {"which", "what", "who","has", "have", "had",
+				"is", "are", "was", "were",
+				"these", "those", "this", "that", "the",
+				"of", "a", "an", "?"} 
+
 def captureScreen(x, y, wide, length, output):
     subprocess.run(
         ["screencapture", "-R{},{},{},{}".format(x, y, wide, length), output])
@@ -82,9 +87,14 @@ def extractQuestion(lines):
 			if line.find('?') != -1:
 				is_question_done = True
 	# clean
-	for word in stop_words:
-		question = question.replace(word, "")
-	confirmed = rlinput("Confirm the question :", question)
+	confirmed = ""
+	question = question.replace('?', '')
+	words = question.split(' ')
+	for word in words:
+		if not word in exclude_words:
+			confirmed += word + " "
+
+	confirmed = rlinput("Confirm the question :", confirmed)
 	print("question = {}".format(confirmed))
 	return confirmed
 
@@ -92,7 +102,7 @@ def extractAnswers(lines):
 	answers = []
 	for line in lines:
 		line = line.strip().lower()
-		if len(line) > 3:
+		if len(line) > 1:
 			answers.append(line)
 	
 	for i, ans in enumerate(answers):
@@ -107,8 +117,6 @@ def extractAnswers(lines):
 #     driver.set_window_rect(initialX + desiredWidth * i, initialY,desiredWidth,desiredHeight)
 #     drivers.append(driver)
 
-
-
 def searchNcount(question, answers):
 
 	for i, ans in enumerate(answers):
@@ -121,24 +129,33 @@ def searchNcount(question, answers):
 			}
 		r = requests.get(url, param)
 		res = json.loads(r.content)
-		print ("search question+ans{} : num of results{}".format(i, res["searchInformation"]["totalResults"]))
-		if not res["items"]:
-			print("ans {} no result".format(i))
-		else:
-			print ("ans {} top record: {}".format(i, res["items"][0]["title"]))	
-		# driverTemp = drivers[i]
-		# driverTemp.switch_to_window(driverTemp.current_window_handle) #bring to foreground 
-		# driverTemp.get('http://www.google.com/search?q={}'.format(question+" "+ans));
-		# driverTemp.execute_script("document.body.style.zoom='90%'") #zoom to show more content
-		# driverTemp.execute_script("window.scrollTo(130, 100)")
-		# #print(json.dumps(res,indent=4))
+		print ("search question+ans{} : num of results : \t{}".format(i, res["searchInformation"]["totalResults"]))
 
-# for ans in answers:
-# 	driver = webdriver.Chrome('./chromedriver')  # Optional argument, if not specified will search path.
-# 	driver.get('http://www.google.com/search?q={}'.format(question+" "+ans))
 
-# done=input('done:')
-# driver.quit()
+
+def showMostRelevent(question):
+
+	url = "https://www.googleapis.com/customsearch/v1"
+	param = {
+		"key": "AIzaSyBiekaJy2dX-hFzmU5lBa0PzhlnznGVkcg",
+		"cx": "015030761589660041921:evlnx4ljbn8",
+		"num":"10",
+		"q":"{}".format(question),
+		}
+	r = requests.get(url, param)
+	res = json.loads(r.content)
+
+	if not res["items"]:
+		print("ans {} no result".format(i))
+	else:
+		print ("top record: {}".format(res["items"][0]["snippet"]))	
+	
+	# driverTemp = drivers[i]
+	# driverTemp.switch_to_window(driverTemp.current_window_handle) #bring to foreground 
+	# driverTemp.get('http://www.google.com/search?q={}'.format(question+" "+ans));
+	# driverTemp.execute_script("document.body.style.zoom='90%'") #zoom to show more content
+	# driverTemp.execute_script("window.scrollTo(130, 100)")
+	# #print(json.dumps(res,indent=4))
 
 def solveQuestion(image_name):
 	captureScreen(question_x, question_y, question_width, question_length, "question.png")
@@ -151,8 +168,12 @@ def solveQuestion(image_name):
 	print("answers content:{}".format(lines))
 	answers = extractAnswers(lines)
 
-	print("step 3: search google")
-	searchNcount(question, answers)
+	strategy = rlinput("search strategy : ", "qa")
+	if strategy == "qa":	
+		print("step 3: search google")
+		searchNcount(question, answers)
+	else:
+		showMostRelevent(question)
 
 
 def winHqTrivia():

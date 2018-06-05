@@ -11,6 +11,10 @@ import subprocess
 from selenium import webdriver
 import readline
 
+import colorama
+from colorama import Fore
+
+
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--image", required=True,
@@ -21,7 +25,7 @@ args = vars(ap.parse_args())
 
 question_x = 90
 question_y = 150
-question_width = 350
+question_width = 360
 question_length = 150
 
 answers_x = question_x
@@ -78,7 +82,7 @@ def extractQuestion(lines):
 	is_question_done = False
 	for line in lines:
 		line = line.strip().lower()
-		if len(line) > 6:
+		if len(line) > 3:
 			question += " " + line
 			if line.find('?') != -1:
 				is_question_done = True
@@ -147,11 +151,12 @@ def searchNcount(question, answers):
 		else:
 			if res["searchInformation"]["totalResults"] != 0:
 				for item in res["items"]:
+					# print(Fore.BLACK + item["snippet"].lower())
 					if answers[i-1] in item["snippet"].lower():
 						results[i-1]["match"] += 1
 
 			results[i-1]["total"] = res["searchInformation"]["totalResults"]
-			print ("ans {} : found: {}, \t match: {}, \t total:{} "
+			print (Fore.BLUE + "ans {} : found: {}, \t match: {}, \t total:{} "
 				.format(i, 
 					results[i-1]["found"], 
 					results[i-1]["match"], 

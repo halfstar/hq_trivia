@@ -27,17 +27,13 @@ question_length = 150
 answers_x = question_x
 answers_y = question_y + question_length
 answers_width = 280
-answers_length = 180
+answers_length = 200
 
-stop_words = ["which ", "what ", "who ","has ", "have ", "had ",
-				"is ", "are ", "was ", "were ",
-				"these ", "those ", "this ", "that ", "the ",
-				"of ", "a ", "an ", "?"]
-
-exclude_words = {"which", "what", "who","has", "have", "had",
-				"is", "are", "was", "were",
+exclude_words = {"which", "what", "where", "who","has", "have", "had",
+				"is", "are", "was", "were", "in", "you", "would",
+				"could",
 				"these", "those", "this", "that", "the",
-				"of", "a", "an", "?"} 
+				"of", "a", "an", "not", "?"} 
 
 def captureScreen(x, y, wide, length, output):
     subprocess.run(
@@ -94,7 +90,7 @@ def extractQuestion(lines):
 		if not word in exclude_words:
 			confirmed += word + " "
 
-	confirmed = rlinput("Confirm the question :", confirmed)
+	# confirmed = rlinput("Confirm the question :", confirmed)
 	print("question = {}".format(confirmed))
 	return confirmed
 
@@ -102,6 +98,9 @@ def extractAnswers(lines):
 	answers = []
 	for line in lines:
 		line = line.strip().lower()
+		line = line.replace('?', '')
+		line = line.replace('!', '')
+		line = line.replace('.', '')
 		if len(line) > 1:
 			answers.append(line)
 	
@@ -118,18 +117,45 @@ def extractAnswers(lines):
 #     drivers.append(driver)
 
 def searchNcount(question, answers):
+	queries = [question] 
+	for ans in answers:
+		queries.append("{} {}".format(question, ans))
 
-	for i, ans in enumerate(answers):
+	results = people = [
+		{'found': False, 'match': 0, "total": 0},
+		{'found': False, 'match': 0, "total": 0},
+		{'found': False, 'match': 0, "total": 0}
+	]
+
+	for i, q in enumerate(queries):
 		url = "https://www.googleapis.com/customsearch/v1"
 		param = {
 			"key": "AIzaSyBiekaJy2dX-hFzmU5lBa0PzhlnznGVkcg",
 			"cx": "015030761589660041921:evlnx4ljbn8",
 			"num":"10",
-			"q":"{}".format(question+" "+ans),
+			"q":"{}".format(q),
 			}
 		r = requests.get(url, param)
 		res = json.loads(r.content)
-		print ("search question+ans{} : num of results : \t{}".format(i, res["searchInformation"]["totalResults"]))
+		#print(json.dumps(res,indent=4))
+
+		# ONLY search question : check if answer is in the snippet
+		if i == 0:
+			for j, ans in enumerate(answers):
+				if ans in res["items"][0]["snippet"].lower():
+					results[j]["found"] = True
+		else:
+			if res["searchInformation"]["totalResults"] != 0:
+				for item in res["items"]:
+					if answers[i-1] in item["snippet"].lower():
+						results[i-1]["match"] += 1
+
+			results[i-1]["total"] = res["searchInformation"]["totalResults"]
+			print ("ans {} : found: {}, \t match: {}, \t total:{} "
+				.format(i, 
+					results[i-1]["found"], 
+					results[i-1]["match"], 
+					results[i-1]["total"]))
 
 
 
@@ -160,20 +186,21 @@ def showMostRelevent(question):
 def solveQuestion(image_name):
 	captureScreen(question_x, question_y, question_width, question_length, "question.png")
 	lines = ocr("question.png", "q_tmp.png")
-	print("question content:{}".format(lines))
+	# print("question content:{}".format(lines))
 	question = extractQuestion(lines)
 
 	captureScreen(answers_x, answers_y, answers_width, answers_length, "answers.png")
 	lines = ocr("answers.png", "a_tmp.png")
-	print("answers content:{}".format(lines))
+	# print("answers content:{}".format(lines))
 	answers = extractAnswers(lines)
+	searchNcount(question, answers)
 
-	strategy = rlinput("search strategy : ", "qa")
-	if strategy == "qa":	
-		print("step 3: search google")
-		searchNcount(question, answers)
-	else:
-		showMostRelevent(question)
+	# strategy = rlinput("search strategy : ", "qa")
+	# if strategy == "qa":	
+	# 	print("step 3: search google")
+	# 	searchNcount(question, answers)
+	# else:
+	# 	showMostRelevent(question)
 
 
 def winHqTrivia():

@@ -35,9 +35,9 @@ answers_length = 200
 
 exclude_words = {"which", "what", "where", "who","has", "have", "had",
 				"is", "are", "was", "were", "in", "you", "would",
-				"could",
+				"could", "a", "an",
 				"these", "those", "this", "that", "the",
-				"of", "a", "an", "not", "?"} 
+				"of",  "not", "?"} 
 
 def captureScreen(x, y, wide, length, output):
     subprocess.run(
@@ -96,6 +96,8 @@ def extractQuestion(lines):
 
 	# confirmed = rlinput("Confirm the question :", confirmed)
 	print(Fore.BLACK + "question = {}".format(confirmed))
+	if "not" in words:
+		print (Fore.RED + "!!!  NOT !!!")
 	return confirmed
 
 def extractAnswers(lines):
@@ -109,7 +111,7 @@ def extractAnswers(lines):
 			answers.append(line)
 	
 	for i, ans in enumerate(answers):
-		print(Fore.BLACK + "ans{} = {}".format(i, ans))
+		print(Fore.BLACK + "ans{} = {}".format(i, ans),end="  ")
 	return answers	
 
 # step 3: using custom search api question + answer
@@ -121,14 +123,16 @@ def extractAnswers(lines):
 #     drivers.append(driver)
 
 def searchNcount(question, answers):
+	print("")
+	print("")
 	queries = [question] 
 	for ans in answers:
 		queries.append("{} {}".format(question, ans))
 
 	results = people = [
-		{'found': False, 'match': "", "total": 0},
-		{'found': False, 'match': "", "total": 0},
-		{'found': False, 'match': "", "total": 0}
+		{'inQ': False, 'inQA': "", "count": 0},
+		{'inQ': False, 'inQA': "", "count": 0},
+		{'inQ': False, 'inQA': "", "count": 0}
 	]
 
 	for i, q in enumerate(queries):
@@ -147,29 +151,31 @@ def searchNcount(question, answers):
 		if i == 0:
 			for j, ans in enumerate(answers):
 				if ans in res["items"][0]["snippet"].lower():
-					results[j]["found"] = True
+					results[j]["inQ"] = "T"
+				else:
+					results[j]["inQ"] = "F"
 		else:
 			if res["searchInformation"]["totalResults"] != 0:
 				for item in res["items"]:
 					# print(Fore.BLACK + item["snippet"].lower())
 					if answers[i-1] in item["snippet"].lower():
-						results[i-1]["match"] += 't'
+						results[i-1]["inQA"] += 'T'
 					else:
-						results[i-1]["match"] += ' '
+						results[i-1]["inQA"] += '.'
 
-			results[i-1]["total"] = res["searchInformation"]["totalResults"]
-			if results[i-1]["found"] == True:
-				print (Fore.BLUE + "ans {} : found: {}, \t match: {}, \t total:{} "
+			results[i-1]["count"] = res["searchInformation"]["totalResults"]
+			if results[i-1]["inQ"] == True:
+				print (Fore.GREEN + "ans {} \t{}  {}\t{}"
 					.format(i, 
-						results[i-1]["found"], 
-						results[i-1]["match"], 
-						results[i-1]["total"]))
+						results[i-1]["inQ"], 
+						results[i-1]["count"], 
+						results[i-1]["inQA"]))
 			else:
-				print (Fore.BLACK + "ans {} : found: {}, \t match: {}, \t total:{} "
+				print (Fore.BLACK + "ans {} \t{}  {}\t{}"
 					.format(i, 
-						results[i-1]["found"], 
-						results[i-1]["match"], 
-						results[i-1]["total"]))
+						results[i-1]["inQ"], 
+						results[i-1]["count"], 
+						results[i-1]["inQA"]))
 
 
 def showMostRelevent(question):

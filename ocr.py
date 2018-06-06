@@ -95,7 +95,7 @@ def extractQuestion(lines):
 			confirmed += word + " "
 
 	# confirmed = rlinput("Confirm the question :", confirmed)
-	print("question = {}".format(confirmed))
+	print(Fore.BLACK + "question = {}".format(confirmed))
 	return confirmed
 
 def extractAnswers(lines):
@@ -109,7 +109,7 @@ def extractAnswers(lines):
 			answers.append(line)
 	
 	for i, ans in enumerate(answers):
-		print("ans{} = {}".format(i, ans))
+		print(Fore.BLACK + "ans{} = {}".format(i, ans))
 	return answers	
 
 # step 3: using custom search api question + answer
@@ -126,9 +126,9 @@ def searchNcount(question, answers):
 		queries.append("{} {}".format(question, ans))
 
 	results = people = [
-		{'found': False, 'match': 0, "total": 0},
-		{'found': False, 'match': 0, "total": 0},
-		{'found': False, 'match': 0, "total": 0}
+		{'found': False, 'match': "", "total": 0},
+		{'found': False, 'match': "", "total": 0},
+		{'found': False, 'match': "", "total": 0}
 	]
 
 	for i, q in enumerate(queries):
@@ -153,15 +153,23 @@ def searchNcount(question, answers):
 				for item in res["items"]:
 					# print(Fore.BLACK + item["snippet"].lower())
 					if answers[i-1] in item["snippet"].lower():
-						results[i-1]["match"] += 1
+						results[i-1]["match"] += 't'
+					else:
+						results[i-1]["match"] += ' '
 
 			results[i-1]["total"] = res["searchInformation"]["totalResults"]
-			print (Fore.BLUE + "ans {} : found: {}, \t match: {}, \t total:{} "
-				.format(i, 
-					results[i-1]["found"], 
-					results[i-1]["match"], 
-					results[i-1]["total"]))
-
+			if results[i-1]["found"] == True:
+				print (Fore.BLUE + "ans {} : found: {}, \t match: {}, \t total:{} "
+					.format(i, 
+						results[i-1]["found"], 
+						results[i-1]["match"], 
+						results[i-1]["total"]))
+			else:
+				print (Fore.BLACK + "ans {} : found: {}, \t match: {}, \t total:{} "
+					.format(i, 
+						results[i-1]["found"], 
+						results[i-1]["match"], 
+						results[i-1]["total"]))
 
 
 def showMostRelevent(question):
@@ -177,9 +185,9 @@ def showMostRelevent(question):
 	res = json.loads(r.content)
 
 	if not res["items"]:
-		print("ans {} no result".format(i))
+		print("Fore.BLACK + ans {} no result".format(i))
 	else:
-		print ("top record: {}".format(res["items"][0]["snippet"]))	
+		print ("Fore.BLACK top record: {}".format(res["items"][0]["snippet"]))	
 	
 	# driverTemp = drivers[i]
 	# driverTemp.switch_to_window(driverTemp.current_window_handle) #bring to foreground 
@@ -219,7 +227,7 @@ def winHqTrivia():
 		image_name = "{}_{}.png".format(args["image"], str(count))
 		count+=1
 		solveQuestion(image_name)
-		print("next question\n")
+		print(Fore.BLACK + "next question\n")
 
 winHqTrivia()
 # for driver in drivers:

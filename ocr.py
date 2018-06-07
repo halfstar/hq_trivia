@@ -14,7 +14,6 @@ import readline
 import colorama
 from colorama import Fore
 
-
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--image", required=True,
@@ -52,7 +51,7 @@ def ocr(image_file, tmp_file_name):
 	if args["preprocess"] == "thresh":
 		gray = cv2.threshold(gray, 0, 255,
 							cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-
+	
 	# make a check to see if median blurring should be done to remove
 	# noise
 	elif args["preprocess"] == "blur":
@@ -130,9 +129,9 @@ def searchNcount(question, answers):
 		queries.append("{} {}".format(question, ans))
 
 	results = people = [
-		{'inQ': False, 'inQA': "", "count": 0},
-		{'inQ': False, 'inQA': "", "count": 0},
-		{'inQ': False, 'inQA': "", "count": 0}
+		{'inQ': "F", 'inQA': "", "count": 0},
+		{'inQ': "F", 'inQA': "", "count": 0},
+		{'inQ': "F", 'inQA': "", "count": 0}
 	]
 
 	for i, q in enumerate(queries):
@@ -164,7 +163,7 @@ def searchNcount(question, answers):
 						results[i-1]["inQA"] += '.'
 
 			results[i-1]["count"] = res["searchInformation"]["totalResults"]
-			if results[i-1]["inQ"] == True:
+			if results[i-1]["inQ"] == "T":
 				print (Fore.GREEN + "ans {} \t{}  {}\t{}"
 					.format(i, 
 						results[i-1]["inQ"], 

@@ -158,13 +158,13 @@ def searchNcount(question, answers):
 		if i == 0:
 			if int(res["searchInformation"]["totalResults"]) != 0:
 				top_url = res["items"][0]["link"]
-				content = requests.get(top_url).content
-				soup = BeautifulSoup(content, 'html.parser')
+				soup = BeautifulSoup(requests.get(top_url).content, 'html.parser')
 				paras = soup.find_all('p')
 				for p in paras:
 					for j, ans in enumerate(answers):
-						if str(p).lower().find(ans) != -1:
-							results[j]["inQ"] += 1
+						if j < 20:
+							if str(p).lower().find(ans) != -1:
+								results[j]["inQ"] += 1
 		else:
 			if int(res["searchInformation"]["totalResults"]) != 0:
 				for item in res["items"]:
@@ -193,8 +193,8 @@ def showMostRelevent(question):
 
 	url = "https://www.googleapis.com/customsearch/v1"
 	param = {
-		"key": ces_key2,
-		"cx": ces_id2,
+		"key": ces_key,
+		"cx": ces_id,
 		"num":"10",
 		"q":"{}".format(question),
 		}

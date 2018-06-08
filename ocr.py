@@ -10,7 +10,7 @@ import time
 import subprocess
 from selenium import webdriver
 import readline
-
+from bs4 import BeautifulSoup
 import colorama
 from colorama import Fore
 
@@ -29,7 +29,7 @@ question_length = 150
 
 answers_x = question_x
 answers_y = question_y + question_length
-answers_width = 280
+answers_width = 320
 answers_length = 200
 
 exclude_words = {"which", "what", "where", "who","has", "have", "had",
@@ -38,9 +38,20 @@ exclude_words = {"which", "what", "where", "who","has", "have", "had",
 				"these", "those", "this", "that", "the",
 				"of",  "not", "?"} 
 
+ces_key = "AIzaSyBiekaJy2dX-hFzmU5lBa0PzhlnznGVkcg"
+ces_key2 = "AIzaSyA9K5u3fZXIoRzoZ_gsMuKA3KXf3RBAsEQ"
+ces_id = "015030761589660041921:evlnx4ljbn8"
+ces_id2 = "013839124275025367730:mcpbdsjnyxs"
+
 def captureScreen(x, y, wide, length, output):
     subprocess.run(
         ["screencapture", "-R{},{},{},{}".format(x, y, wide, length), output])
+
+def clean(word):
+	signs = ['.', ',', '?', '!', '\'', '"', ';', "“", "”"]
+	for s in signs:
+		word = word.replace(s, '')
+	return word
 
 def ocr(image_file, tmp_file_name):
 	# load the example image and convert it to grayscale
@@ -91,8 +102,7 @@ def extractQuestion(lines):
 	words = question.split(' ')
 	for word in words:
 		if not word in exclude_words:
-			confirmed += word + " "
-
+			confirmed += clean(word) + " "
 	# confirmed = rlinput("Confirm the question :", confirmed)
 	print(Fore.BLACK + "question = {}".format(confirmed))
 	if "not" in words:
@@ -103,14 +113,12 @@ def extractAnswers(lines):
 	answers = []
 	for line in lines:
 		line = line.strip().lower()
-		line = line.replace('?', '')
-		line = line.replace('!', '')
-		line = line.replace('.', '')
+		line = clean(line)
 		if len(line) > 1:
 			answers.append(line)
 	
 	for i, ans in enumerate(answers):
-		print(Fore.BLACK + "ans{} = {}".format(i, ans),end="  ")
+		print(Fore.BLACK + "ans{} = {}".format(i, ans))
 	return answers	
 
 # step 3: using custom search api question + answer
@@ -128,17 +136,17 @@ def searchNcount(question, answers):
 	for ans in answers:
 		queries.append("{} {}".format(question, ans))
 
-	results = people = [
-		{'inQ': "F", 'inQA': "", "count": 0},
-		{'inQ': "F", 'inQA': "", "count": 0},
-		{'inQ': "F", 'inQA': "", "count": 0}
+	results = [
+		{'inQ': 0, 'inQA': "", "count": 0},
+		{'inQ': 0, 'inQA': "", "count": 0},
+		{'inQ': 0, 'inQA': "", "count": 0}
 	]
 
 	for i, q in enumerate(queries):
 		url = "https://www.googleapis.com/customsearch/v1"
 		param = {
-			"key": "AIzaSyBiekaJy2dX-hFzmU5lBa0PzhlnznGVkcg",
-			"cx": "015030761589660041921:evlnx4ljbn8",
+			"key": ces_key,
+			"cx": ces_id,
 			"num":"10",
 			"q":"{}".format(q),
 			}
@@ -148,13 +156,17 @@ def searchNcount(question, answers):
 
 		# ONLY search question : check if answer is in the snippet
 		if i == 0:
-			for j, ans in enumerate(answers):
-				if ans in res["items"][0]["snippet"].lower():
-					results[j]["inQ"] = "T"
-				else:
-					results[j]["inQ"] = "F"
+			if int(res["searchInformation"]["totalResults"]) != 0:
+				top_url = res["items"][0]["link"]
+				content = requests.get(top_url).content
+				soup = BeautifulSoup(content, 'html.parser')
+				paras = soup.find_all('p')
+				for p in paras:
+					for j, ans in enumerate(answers):
+						if str(p).lower().find(ans) != -1:
+							results[j]["inQ"] += 1
 		else:
-			if res["searchInformation"]["totalResults"] != 0:
+			if int(res["searchInformation"]["totalResults"]) != 0:
 				for item in res["items"]:
 					# print(Fore.BLACK + item["snippet"].lower())
 					if answers[i-1] in item["snippet"].lower():
@@ -162,16 +174,16 @@ def searchNcount(question, answers):
 					else:
 						results[i-1]["inQA"] += '.'
 
-			results[i-1]["count"] = res["searchInformation"]["totalResults"]
-			if results[i-1]["inQ"] == "T":
-				print (Fore.GREEN + "ans {} \t{}  {}\t{}"
-					.format(i, 
+			results[i-1]["count"] = int(res["searchInformation"]["totalResults"])
+			if results[i-1]["inQ"] != 0:
+				print (Fore.GREEN + "ans {0} {1:2d} {2:10d} {3}"
+					.format(i-1, 
 						results[i-1]["inQ"], 
 						results[i-1]["count"], 
 						results[i-1]["inQA"]))
 			else:
-				print (Fore.BLACK + "ans {} \t{}  {}\t{}"
-					.format(i, 
+				print (Fore.BLACK + "ans {0} {1:2d} {2:10d} {3}"
+					.format(i-1, 
 						results[i-1]["inQ"], 
 						results[i-1]["count"], 
 						results[i-1]["inQA"]))
@@ -181,8 +193,8 @@ def showMostRelevent(question):
 
 	url = "https://www.googleapis.com/customsearch/v1"
 	param = {
-		"key": "AIzaSyBiekaJy2dX-hFzmU5lBa0PzhlnznGVkcg",
-		"cx": "015030761589660041921:evlnx4ljbn8",
+		"key": ces_key2,
+		"cx": ces_id2,
 		"num":"10",
 		"q":"{}".format(question),
 		}

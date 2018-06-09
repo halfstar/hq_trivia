@@ -27,10 +27,10 @@ question_y = 150
 question_width = 360
 question_length = 150
 
-answers_x = question_x
-answers_y = question_y + question_length
-answers_width = 320
-answers_length = 200
+answer_x = 110
+answer_width = 350
+answer_length = 50
+answers_y = [310, 380, 450]
 
 exclude_words = {"which", "what", "where", "who","has", "have", "had",
 				"is", "are", "was", "were", "in", "you", "would",
@@ -70,8 +70,9 @@ def ocr(image_file, tmp_file_name):
 
 	# write the grayscale image to disk as a temporary file so we can
 	# apply OCR to it
-	cv2.imwrite(tmp_file_name, gray)
-	text = pytesseract.image_to_string(Image.open(tmp_file_name))
+	# cv2.imwrite(tmp_file_name, gray)
+
+	text = pytesseract.image_to_string(gray)
 	#os.remove(filename)
 	lines = text.splitlines()
 	return lines
@@ -109,17 +110,20 @@ def extractQuestion(lines):
 		print (Fore.RED + "!!!  NOT !!!")
 	return confirmed
 
-def extractAnswers(lines):
+def extractAnswers(positions):
 	answers = []
-	for line in lines:
+	for i, p in enumerate(positions):
+		captureScreen(answer_x, p, answer_width, answer_length, "ans{}.png".format(i))
+		lines = ocr("ans{}.png".format(i), "a_{}.png".format(i))
+		if len(lines) != 0:
+			line = lines[0]
+		else: 
+			line = ""
 		line = line.strip().lower()
 		line = clean(line)
-		if len(line) > 1:
-			answers.append(line)
-	
-	for i, ans in enumerate(answers):
-		print(Fore.BLACK + "ans{} = {}".format(i, ans))
-	return answers	
+		print(Fore.BLACK + "ans{} = {}".format(i, line))
+		answers.append(line)
+	return answers
 
 # step 3: using custom search api question + answer
 # drivers = []
@@ -145,8 +149,8 @@ def searchNcount(question, answers):
 	for i, q in enumerate(queries):
 		url = "https://www.googleapis.com/customsearch/v1"
 		param = {
-			"key": ces_key,
-			"cx": ces_id,
+			"key": ces_key2,
+			"cx": ces_id2,
 			"num":"10",
 			"q":"{}".format(q),
 			}
@@ -219,10 +223,8 @@ def solveQuestion(image_name):
 	# print("question content:{}".format(lines))
 	question = extractQuestion(lines)
 
-	captureScreen(answers_x, answers_y, answers_width, answers_length, "answers.png")
-	lines = ocr("answers.png", "a_tmp.png")
-	# print("answers content:{}".format(lines))
-	answers = extractAnswers(lines)
+	answers = extractAnswers(answers_y)
+
 	searchNcount(question, answers)
 
 	# strategy = rlinput("search strategy : ", "qa")
